@@ -1,90 +1,181 @@
-# Segmentación de clientes para CRM
+# Análisis de clientes de una marca de moda
 
-Análisis de clientes de una marca de moda mexicana (tienda online y 5 tiendas físicas) para responder tres preguntas del equipo de CRM:
+Análisis de los clientes de una marca de moda mexicana (tienda online y 5 tiendas físicas, unos 3.000 clientes, datos de enero de 2024 a septiembre de 2026). El análisis responde tres preguntas:
 
-1. ¿Quiénes se interesan por las nuevas colecciones?
-2. ¿Quiénes compran de forma recurrente?
-3. ¿Quiénes son los clientes de mayor valor?
+1. ¿Qué clientes muestran interés en las nuevas colecciones?
+2. ¿Qué clientes son recurrentes?
+3. ¿Qué clientes aportan más valor?
 
-Además, se construyen arquetipos de clientes según su comportamiento de compra, para que el CRM pueda comunicarse de forma distinta con cada grupo.
+Con esas respuestas se construyen 6 arquetipos de cliente, cada uno con una acción de marketing distinta.
 
 ## Estructura
 
 ```
-├── data/                       # CSV originales (no incluidos en el repositorio)
-│   └── processed/              # Tablas limpias generadas por 01_limpieza (no incluidas)
+retail-customer-analytics/
+├── data/                  # datos crudos y procesados (no versionados: contienen datos personales)
+│   └── processed/
 ├── notebooks/
-│   ├── 01_limpieza.ipynb       # Calidad de datos: diagnóstico, tratamiento y exportación
-│   └── 02_analisis.ipynb       # Las tres preguntas de negocio y los arquetipos
+│   ├── 01_limpieza.ipynb  # revisión de calidad: problema, tratamiento e impacto de cada hallazgo
+│   └── 02_analisis.ipynb  # tres preguntas y arquetipos
 ├── reports/
-│   └── figures/                # Gráficos generados por los notebooks (se usan en las slides)
+│   ├── figures/           # gráficos usados en este README y en la presentación
+│   └── resumen_ejecutivo.pptx
 ├── requirements.txt
 └── README.md
 ```
 
 ## Cómo ejecutarlo
 
-1. Clonar el repositorio y crear un entorno virtual:
 ```bash
-   python -m venv .venv
-   .venv\Scripts\activate        # Windows
-   source .venv/bin/activate     # Mac/Linux
-   pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
-2. Copiar los 5 CSV originales en data/:
-   customers.csv, orders.csv, order_items.csv, products.csv, stores.csv
-3. Ejecutar los notebooks en orden, de arriba hacia abajo:
-   - 01_limpieza.ipynb genera las tablas limpias en data/processed/.
-   - 02_analisis.ipynb las lee y responde las preguntas.
+
+1. Copiar los 5 CSV originales (customers, orders, order_items, products, stores) en data/.
+2. Ejecutar notebooks/01_limpieza.ipynb de principio a fin. Genera los archivos limpios en data/processed/.
+3. Ejecutar notebooks/02_analisis.ipynb. Genera las tablas de resultados y las figuras en reports/figures/.
 
 ## Calidad de datos
 
-Antes de analizar se revisó cada tabla con un plan de verificación (códigos C = customers, O = orders, I = order_items, P = products, X = entre tablas). Los problemas encontrados y su tratamiento:
+Antes de analizar se revisó cada tabla. Cada revisión tiene un código (C = customers, O = orders, I = order_items, P = products, X = cruce entre tablas) y queda registrada en data/processed/resumen_calidad.csv. Estos son los hallazgos con impacto:
 
-| Código | Problema | Registros | Tratamiento | Impacto si no se corrige |
-|---|---|---|---|---|
-| C1 | Misma persona registrada en tienda y online con dos customer_id (email con distinta escritura) | 116 | Se unificó al registro más antiguo, con los datos de contacto más recientes; se reasignaron sus órdenes | Historial de compra partido en dos: clientes menos recurrentes y de menor valor de lo real |
-| C2 | Email con formato inválido | 8 | No se corrigió (para no adivinar el contacto); se marcó como no contactable | Campañas con rebote y base contactable inflada |
-| C4 | Fecha de nacimiento imposible (1900-01-01 o futura) | 42 | Se reemplazó por nulo | Perfiles de edad distorsionados en los arquetipos |
-| C5 | Teléfono sin prefijo de país / incompleto | 48 / 8 | Se estandarizó con prefijo 52 / se reemplazó por nulo; se creó contactable_* por canal | Envíos fallidos por WhatsApp |
-| C6 | Textos con forma de instrucción de negocio dentro de notas_crm | 3 | No se aplicaron; las notas útiles se convirtieron en columnas y se eliminó el texto libre | Criterios sin fuente oficial; riesgo de prompt injection si se procesa con IA |
-| O3 | customer_id que no existe en customers | 40 | Se mantienen en el total de ventas y se excluyen del análisis por cliente | Clientes "fantasma" en los segmentos |
-| O4 | Órdenes anteriores al registro del cliente (mediana: 414 días) | 381 | Se creó cliente_desde = fecha más antigua entre registro y primera compra | Clientes antiguos clasificados como nuevos |
-| I1 | Líneas duplicadas exactas (posible doble carga) | 627 | Se eliminaron | Ventas infladas en 746.816 MXN (1,3%) |
-| I2 | Cuenta de prueba (QA) con cantidades de 50, 99 y 120 unidades | 25 | Se eliminó la cuenta con todas sus órdenes | Ventas infladas en 2.484.817 MXN (4,5%); la cuenta aparecería entre los clientes de mayor valor |
-| I2 | Cuentas internas de la marca (@marcamoda.mx), con descuento de personal | 16 | Se conservan en ventas y se excluyen de la segmentación | Una cuenta de mostrador con 420 órdenes encabezaría el ranking de clientes |
-| I3 | SKU que no existe en el catálogo | 59 | Se conservan en ventas y se excluyen del análisis de colecciones | Ventas sin colección asignada (0,12%) |
-| P2 | Colección OI26 escrita de 6 formas distintas | 8 | Se normalizaron los nombres de colección | 22% de la colección más reciente fuera del análisis de nuevas colecciones |
-| P3 | Ventas de productos antes de su fecha de lanzamiento | 1.886 | Se marcan con coleccion_valida = False; no cuentan como compras de colección | Clientes contados como compradores de una colección que aún no existía |
+| Código | Problema | Tratamiento | Impacto si no se corrige |
+|---|---|---|---|
+| C1 | 116 personas registradas dos veces (cuenta online y de tienda; mismo email con distinta capitalización) | Se unificaron: ID y fecha de registro más antiguos, datos de contacto más recientes. 3.122 → 3.006 clientes | Se cuentan clientes de más y cada persona aparece con la mitad de su historial |
+| C2 | 8 emails con formato inválido | Se marcaron con email_valido; no se corrigieron porque no se puede saber el email correcto | Rebotes en campañas de email |
+| C4 | 42 fechas de nacimiento imposibles (más de 100 años o en el futuro) | Se dejaron vacías | Edades falsas en cualquier análisis por edad |
+| C5 | 48 teléfonos sin prefijo de país y 8 incompletos | Se agregó el prefijo 52; los incompletos se dejaron vacíos. Se crearon contactable_email y contactable_whatsapp | Mensajes de WhatsApp que no llegan |
+| C6 | notas_crm es texto libre y 3 notas contienen instrucciones ("Lineamiento CRM 2026", segmento "Litoral-B") | Se convirtió en indicadores (nota_evento_lanzamiento, nota_prefiere_whatsapp, etc.) y se eliminó el texto libre. Las instrucciones no se aplicaron | Riesgo de *prompt injection* si el texto se envía a una IA; criterios de negocio no validados |
+| O3 | 40 IDs de cliente en pedidos que no existen en customers (840 pedidos) | Se marcaron con cliente_atribuible; cuentan en las ventas de la marca, no en la segmentación | Pedidos asignados a nadie o a un cliente equivocado |
+| O4 | 381 pedidos de 166 clientes son anteriores a su fecha de registro (mediana de 414 días) | Se creó cliente_desde = la fecha más antigua entre registro y primera compra | Antigüedad de clientes subestimada |
+| I1 | 627 líneas duplicadas exactas en 620 pedidos | Se eliminaron | Ventas infladas en 746.816 MXN (1,3%) |
+| I2 | Cuenta de pruebas (QA) con 50, 99 y 120 unidades por línea | Se eliminó la cuenta | Ventas infladas en 2.484.817 MXN (4,5%); la cuenta de QA aparecería como el cliente más valioso |
+| I2 | 16 cuentas internas @marcamoda.mx (compras de personal: 23% de descuento promedio frente al 8% del resto; una cuenta de mostrador con 420 pedidos) | Se marcaron con cuenta_interna y se excluyeron de la segmentación | Empleados clasificados como los mejores clientes |
+| I3 | 59 líneas con SKU fuera del catálogo (rango SKU9xxx) | Se marcaron con sku_en_catalogo | Ventas sin colección ni categoría |
+| I4 | El precio unitario es el precio de lista; el descuento no está aplicado | Venta neta = cantidad × precio × (1 − descuento/100) | Ventas sobreestimadas |
+| P2 | La colección OI26 está escrita de 6 formas distintas | Se normalizó a mayúsculas, sin espacios ni guiones | Una colección partida en 6 |
+| P3 | 1.886 líneas (5,8%) vendidas antes del lanzamiento de su producto | Se marcaron con coleccion_valida; no se usan para medir interés en novedades | Compras "en lanzamiento" que no lo son |
 
-Sin hallazgos: consistencia de ciudades y canales (C3, O1), coherencia canal–tienda (O2), formato de fechas (año-mes-día en todas las tablas), rangos de precio y descuento (I2), órdenes sin ítems (X1).
+En total, el 5,8% de las ventas brutas venía de registros que no son ventas reales a clientes.
 
 ## Definiciones y supuestos
 
-- **Fecha de corte:** 2026-09-30, la última fecha con órdenes registradas.
-- **Venta:** solo las órdenes con estado completada (94% del total). Las devueltas y canceladas se excluyen.
-- **Venta neta por línea:** cantidad × precio_unitario × (1 − descuento_pct / 100). Se verificó que precio_unitario es el precio de lista y no incluye el descuento.
-- **Clientes del análisis:** órdenes atribuibles a un cliente registrado, sin cuentas internas ni de prueba.
-- **Criterios de las tres preguntas:** *(pendiente)*
+- **Fecha de corte:** 30 de septiembre de 2026 (último pedido de los datos).
+- **Venta:** pedido con estado completada (94% de los pedidos). Los devueltos y cancelados no cuentan.
+- **Venta neta:** cantidad × precio unitario × (1 − descuento %/100).
+- **Base de segmentación:** 2.877 clientes con al menos una compra, sin cuentas internas ni IDs huérfanos. Representan el 93,8% de las ventas de la marca (42,2 de 45,0 millones de MXN).
+- Además hay 112 clientes registrados que nunca compraron; quedan fuera de los arquetipos.
 
 ## Resultados
 
-*(pendiente)*
+### 1. Interés en nuevas colecciones
+
+Criterio: una compra cuenta como "de lanzamiento" si ocurre en los 21 días siguientes al lanzamiento del producto. La ventana sale de los datos: las 3 primeras semanas concentran el 30% de las ventas de cada colección; a partir de la cuarta semana las ventas caen a un nivel bajo y estable.
+
+![Ventas por semana desde el lanzamiento](reports/figures/q1_ventana_lanzamiento.png)
+
+| Nivel | Definición | Clientes | % clientes | % ventas |
+|---|---|---|---|---|
+| Muy interesado | Compró en lanzamiento en 2 o más colecciones | 481 | 16,7% | 52,2% |
+| Interesado | Compró en lanzamiento en 1 colección | 238 | 8,3% | 5,6% |
+| Sin interés | Nunca compró en lanzamiento | 2.158 | 75,0% | 36,0% |
+
+Validación: 14 de los 15 clientes con la nota CRM "asiste a eventos de lanzamiento" quedan en *Sin interés*: compran sobre todo básicos y prendas de temporada fuera de la ventana. La nota no sirve para identificar el interés en novedades; el comportamiento de compra sí.
+
+### 2. Recurrencia
+
+Criterio: 6 o más compras en los últimos 12 meses. La mediana entre compras es de 42 días (unas 8 compras al año para un cliente activo), y la distribución de compras al año tiene dos grupos con un valle en 4 y 5 compras. El corte en 6 separa esos dos grupos.
+
+![Días entre compras](reports/figures/q2_dias_entre_compras.png)
+
+![Compras en los últimos 12 meses](reports/figures/q2_compras_ultimo_anio.png)
+
+| Nivel | Compras en 12 meses | Clientes | % clientes | % ventas |
+|---|---|---|---|---|
+| Recurrente | 6 o más | 664 | 23,1% | 64,2% |
+| Ocasional | 2 a 5 | 837 | 29,1% | 21,3% |
+| Inactivo o una compra | 0 o 1 | 1.376 | 47,8% | 8,2% |
+
+### 3. Valor
+
+Criterio: el top 20% de clientes por venta neta total. La curva de Pareto muestra que ese 20% genera el 70% de las ventas atribuibles.
+
+![Curva de Pareto](reports/figures/q3_pareto.png)
+
+| Nivel | Clientes | % ventas de la marca | Gasto promedio (MXN) | Compras promedio | Ticket promedio (MXN) |
+|---|---|---|---|---|---|
+| Alto valor (top 20%) | 575 | 65% | 51.179 | 19 | 2.634 |
+| Valor medio (siguiente 30%) | 863 | 22% | 11.464 | 7 | 1.661 |
+| Valor bajo (50% restante) | 1.439 | 6% | 2.033 | 2 | 1.088 |
+
+El valor viene de comprar más seguido y de gastar más por compra. Frente al valor bajo, el alto valor compra unas 9,5 veces más y su ticket es unas 2,4 veces mayor: la frecuencia pesa más, pero el ticket también importa. Ningún cliente de alto valor está inactivo.
+
+### Los tres criterios juntos
+
+Los grupos se solapan, así que no se suman. El gráfico cuenta cuántos criterios cumple cada cliente.
+
+![Resumen de las tres preguntas](reports/figures/resumen_tres_preguntas.png)
+
+![Clientes y ventas según cuántos criterios cumplen](reports/figures/resumen_nucleo.png)
+
+| Criterios que cumple | Clientes | % clientes | % ventas atribuibles |
+|---|---|---|---|
+| 0 | 1.904 | 66,2% | 17,1% |
+| 1 | 401 | 13,9% | 13,4% |
+| 2 | 397 | 13,8% | 28,0% |
+| 3 | 175 | 6,1% | 41,5% |
+
+## Arquetipos
+
+Por qué 6 grupos: cada grupo debe llevar a una acción de marketing distinta. Con menos grupos se mezclan clientes que necesitan acciones diferentes; con más, varios grupos recibirían la misma acción.
+
+Cómo se asignan: reglas en orden; cada cliente queda en el primer arquetipo que cumple, así que los grupos no se solapan.
+
+1. Alto valor y recurrente (Fans de la marca)
+2. Alto valor, no recurrente (Cazadores de lanzamientos)
+3. Recurrente, sin alto valor (Leales en crecimiento)
+4. Primera compra en los últimos 180 días (Nuevos)
+5. Más de 180 días sin comprar (Dormidos)
+6. El resto (Ocasionales)
+
+![Arquetipos: % de clientes y % de ventas](reports/figures/arquetipos.png)
+
+| Arquetipo | Clientes | % clientes | % ventas | Gasto prom. (MXN) | Compras 12m | Ticket (MXN) | Días sin comprar | % muy interesado | % online | Acción |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Fans de la marca | 443 | 15,4% | 57,0% | 57.914 | 9,1 | 2.523 | 21 | 39,5% | 52,6% | Programa de lealtad y acceso anticipado |
+| Cazadores de lanzamientos | 132 | 4,6% | 8,4% | 28.576 | 3,8 | 2.528 | 30 | 95,5% | 81,7% | Aviso anticipado de cada colección, por canal online |
+| Leales en crecimiento | 221 | 7,7% | 7,3% | 14.799 | 7,1 | 1.246 | 28 | 1,4% | 53,7% | Subir el ticket: combos y complementos |
+| Nuevos | 218 | 7,6% | 1,3% | 2.699 | 1,6 | 1.328 | 84,5 | 0% | 51,4% | Lograr la segunda compra |
+| Ocasionales | 619 | 21,5% | 11,2% | 8.168 | 2,5 | 1.633 | 76 | 25,7% | 64,1% | Motivos para volver: recordatorios y temporada |
+| Dormidos | 1.244 | 43,2% | 8,7% | 3.139 | 0,4 | 1.240 | 446 | 1,4% | 49,5% | Reactivación de bajo costo |
+
+*Días sin comprar* es la mediana de días desde la última compra hasta la fecha de corte. *% muy interesado* es la proporción del arquetipo que compró en lanzamiento en 2 o más colecciones.
+
+Sobre los Cazadores de lanzamientos: Este grupo se llamaba al principio *Valiosos en riesgo* (alto valor pero no recurrente). El perfil mostró que no están en riesgo: compraron hace 30 días, el 95% compra en lanzamiento y el 82% compra online. Compran poco pero caro y justo cuando sale la colección, por eso se renombraron. El paso está visible en el notebook.
+
+## Conclusiones
+
+1. El 6% de los clientes cumple los tres criterios y genera el 41,5% de las ventas atribuibles. Los Fans de la marca son el 15% de los clientes y generan el 57%.
+2. Sin la limpieza, la cuenta de pruebas y las 16 cuentas internas aparecerían entre los mejores clientes, y las ventas estarían infladas un 5,8%.
+3. El interés en novedades se mide mejor con las compras que con las notas del CRM. Los 481 clientes que compran en lanzamiento en 2 o más colecciones generan el 52% de las ventas.
+4. Los 132 Cazadores de lanzamientos tienen alto valor pero compran pocas veces al año: justo cuando sale una colección, y sobre todo online.
+5. El 43% de los clientes lleva más de 180 días sin comprar y aporta el 8,7% de las ventas.
+6. 3 notas del CRM contenían instrucciones. Antes de pasar datos de clientes a un modelo de IA hay que quitar el texto libre y los datos personales.
 
 ## Presentación
 
-Los resultados se presentan en un resumen ejecutivo de máximo 5 slides. *(Enlace o archivo pendiente)*
+Resumen ejecutivo de 5 slides: [`reports/resumen_ejecutivo.pptx`](reports/resumen_ejecutivo.pptx).
 
 ## Manejo de datos y uso de IA
 
-Los datos incluyen información personal (email, teléfono y fecha de nacimiento), por eso:
-- La carpeta data/ (originales y procesados) está excluida del repositorio con .gitignore.
-- Ningún dato de clientes se compartió con herramientas de IA externas. La IA se usó solo como apoyo para el código y la metodología; el análisis, la interpretación y las decisiones son propios.
-
+- El repositorio es privado y la carpeta `data/` no se versiona, porque contiene datos personales (email, teléfono, fecha de nacimiento).
+- No se compartieron filas de clientes ni datos personales con herramientas de IA. La IA se usó como apoyo para revisar código y redacción, y solo con resultados agregados (conteos y porcentajes).
+- El texto libre de `notas_crm` se eliminó de los datos procesados, porque contiene instrucciones que una IA podría seguir.
 
 ## Estado
 
-- [x] Limpieza y calidad de datos
-- [ ] Preguntas de negocio
-- [ ] Arquetipos de clientes
-- [ ] Resumen ejecutivo (slides)
+- [x] Limpieza y documentación de calidad de datos (`01_limpieza.ipynb`)
+- [x] Tres preguntas con criterio y cuantificación (`02_analisis.ipynb`)
+- [x] Arquetipos con perfil y acciones
+- [x] Resumen ejecutivo (5 slides)
