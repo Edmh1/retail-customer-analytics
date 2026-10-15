@@ -55,6 +55,7 @@ Antes de analizar se revisó cada tabla con un plan de verificación (códigos C
 | I2 | Cuentas internas de la marca (@marcamoda.mx), con descuento de personal | 16 | Se conservan en ventas y se excluyen de la segmentación | Una cuenta de mostrador con 420 órdenes encabezaría el ranking de clientes |
 | I3 | SKU que no existe en el catálogo | 59 | Se conservan en ventas y se excluyen del análisis de colecciones | Ventas sin colección asignada (0,12%) |
 | P2 | Colección OI26 escrita de 6 formas distintas | 8 | Se normalizaron los nombres de colección | 22% de la colección más reciente fuera del análisis de nuevas colecciones |
+| P3 | Ventas de productos antes de su fecha de lanzamiento | 1.886 | Se marcan con coleccion_valida = False; no cuentan como compras de colección | Clientes contados como compradores de una colección que aún no existía |
 
 Sin hallazgos: consistencia de ciudades y canales (C3, O1), coherencia canal–tienda (O2), formato de fechas (año-mes-día en todas las tablas), rangos de precio y descuento (I2), órdenes sin ítems (X1).
 
