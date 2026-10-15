@@ -169,9 +169,8 @@ Resumen ejecutivo de 5 slides: [`reports/resumen_ejecutivo.pptx`](reports/resume
 
 ## Manejo de datos y uso de IA
 
-- El repositorio es privado y la carpeta `data/` no se versiona, porque contiene datos personales (email, teléfono, fecha de nacimiento).
+- El repositorio es privado y la carpeta data/ no se versiona, porque contiene datos personales (email, teléfono, fecha de nacimiento).
 - No se compartieron filas de clientes ni datos personales con herramientas de IA. La IA se usó como apoyo para revisar código y redacción, y solo con resultados agregados (conteos y porcentajes).
-- El texto libre de `notas_crm` se eliminó de los datos procesados, porque contiene instrucciones que una IA podría seguir.
 
 ## Estado
 
