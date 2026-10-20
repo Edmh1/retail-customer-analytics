@@ -1,6 +1,8 @@
 # Análisis de clientes de una marca de moda
 
-Análisis de los clientes de una marca de moda mexicana (tienda online y 5 tiendas físicas, unos 3.000 clientes, datos de enero de 2024 a septiembre de 2026). El análisis responde tres preguntas:
+Análisis de clientes de una marca de moda con tienda online y 5 tiendas físicas: calidad de datos, interés en novedades, recurrencia, valor y arquetipos de cliente.
+
+Los datos cubren unos 3.000 clientes de una marca mexicana, de enero de 2024 a septiembre de 2026. El análisis responde tres preguntas:
 
 1. ¿Qué clientes muestran interés en las nuevas colecciones?
 2. ¿Qué clientes son recurrentes?
@@ -167,10 +169,9 @@ Sobre los Cazadores de lanzamientos: Este grupo se llamaba al principio *Valioso
 
 Resumen ejecutivo de 5 slides: [`reports/resumen_ejecutivo.pptx`](reports/resumen_ejecutivo.pptx).
 
-## Manejo de datos y uso de IA
+## Datos
 
-- El repositorio es privado y la carpeta data/ no se versiona, porque contiene datos personales (email, teléfono, fecha de nacimiento).
-- No se compartieron filas de clientes ni datos personales con herramientas de IA. La IA se usó como apoyo para revisar código y redacción, y solo con resultados agregados (conteos y porcentajes).
+Los datos no se incluyen en el repositorio porque contienen información personal de clientes. El análisis es reproducible copiando los 5 CSV (customers, orders, order_items, products, stores) en data/ y ejecutando los notebooks en orden.
 
 ## Estado
 
