@@ -20,8 +20,8 @@ retail-customer-analytics/
 │   ├── 01_limpieza.ipynb  # revisión de calidad: problema, tratamiento e impacto de cada hallazgo
 │   └── 02_analisis.ipynb  # tres preguntas y arquetipos
 ├── reports/
-│   ├── figures/           # gráficos usados en este README y en la presentación
-│   └── resumen_ejecutivo.pptx
+│   ├── figures/           # gráficos usados en este README y en el resumen ejecutivo
+│   └── resumen_ejecutivo.pdf
 ├── requirements.txt
 └── README.md
 ```
@@ -167,7 +167,7 @@ Sobre los Cazadores de lanzamientos: Este grupo se llamaba al principio *Valioso
 
 ## Presentación
 
-Resumen ejecutivo de 5 slides: [`reports/resumen_ejecutivo.pptx`](reports/resumen_ejecutivo.pptx).
+Resumen ejecutivo: [reports/resumen_ejecutivo.pdf](reports/resumen_ejecutivo.pdf).
 
 ## Datos
 
@@ -178,4 +178,4 @@ Los datos no se incluyen en el repositorio porque contienen información persona
 - [x] Limpieza y documentación de calidad de datos (`01_limpieza.ipynb`)
 - [x] Tres preguntas con criterio y cuantificación (`02_analisis.ipynb`)
 - [x] Arquetipos con perfil y acciones
-- [x] Resumen ejecutivo (5 slides)
+- [x] Resumen ejecutivo (`reports/resumen_ejecutivo.pdf`)
